@@ -130,3 +130,11 @@ dmypy.json
 *.tex
 
 *.conll
+
+.DS_Store
+
+*.csv
+
+*.tsv
+
+*.json
