@@ -44,10 +44,6 @@ def calculate_chrf(predictions, labels):
         for prediction, label in zip(predictions, labels)
     ]
 
-    print(charf)
-    print([predictions[0]])
-    print([[labels[0]]])
-
     return charf, charf1, charf2
 
 
@@ -111,24 +107,26 @@ def main(args):
     df_pred["score_chrf+"] = chrf1_results
     df_pred["score_chrf++"] = charf2_results
 
-    f.write(f"ChrF ('char_order': 6, 'word_order': 0, 'beta': 2)\n")
-    f.write(f"ChrF+ ('char_order': 6, 'word_order': 1, 'beta': 2)\n")
-    f.write(f"ChrF++ ('char_order': 6, 'word_order': 2, 'beta': 2)\n")
-    f.write(f"RougeL\n")
+    f.write(f"ChrF ('char_order': 6, 'word_order': 0, 'beta': 2)\t")
+    f.write(f"ChrF+ ('char_order': 6, 'word_order': 1, 'beta': 2)\t")
+    f.write(f"ChrF++ ('char_order': 6, 'word_order': 2, 'beta': 2)\t")
+    f.write(f"RougeL\t")
     f.write(
-        f"BERTScore F1 ('hashcode': 'roberta-base_L10_no-idf_version=0.3.12(hug_trans=4.34.0)\n\n"
+        f"BERTScore F1 ('hashcode': 'roberta-base_L10_no-idf_version=0.3.12(hug_trans=4.34.0)\t\n"
     )
 
-    f.write(f"{sum(chrf_results) / len(chrf_results)}\n")
-    f.write(f"{sum(chrf1_results) / len(chrf1_results)}\n")
-    f.write(f"{sum(charf2_results) / len(charf2_results)}\n")
+    f.write(f"{sum(chrf_results) / len(chrf_results)}\t")
+    f.write(f"{sum(chrf1_results) / len(chrf1_results)}\t")
+    f.write(f"{sum(charf2_results) / len(charf2_results)}\t")
 
     rougeL_results = calculate_rougeL(predictions_a, labels_a)
-    f.write(f"{sum(rougeL_results) / len(rougeL_results)}\n")
+    f.write(f"{sum(rougeL_results) / len(rougeL_results)}\t")
     df_pred["score_rougeL"] = rougeL_results
 
     bertScore_results = calculate_BERTScore(predictions_a, labels_a)
-    f.write(f"{sum(bertScore_results) / len(bertScore_results)}\n===================\n")
+    f.write(
+        f"{sum(bertScore_results) / len(bertScore_results)}\t\n===================\n"
+    )
     df_pred["score_BERTScoreF1"] = bertScore_results
 
     # save metrics to file

@@ -29,7 +29,7 @@ def main(args):
 
     print(f"Prediction file: {prediction_file}")
     print(f"Label file: {label_file}")
-    print(f"Output file: {label_file}")
+    print(f"Output file: {output_file}")
 
     # Extract tags for predictions and labels
     with open(prediction_file, "r", encoding="utf-8") as f:
@@ -41,7 +41,9 @@ def main(args):
         label_lines = f.readlines()
         labels = extract_tags(label_lines)
 
-    assert len(label_lines) == len(prediction_lines), f"Number of lines does not match"
+    assert len(label_lines) == len(
+        prediction_lines
+    ), f"Number of lines does not match labels: {len(label_lines)} predictions: {len(prediction_lines)}"
     assert len(predictions) == len(
         labels
     ), f"Number of predictions ({len(predictions)}) does not match number of labels ({len(labels)})"
