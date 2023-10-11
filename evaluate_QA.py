@@ -4,19 +4,59 @@ import pandas as pd
 import evaluate
 
 
-def read_csv(file_path):
-    df = pd.read_csv(file_path, encoding="utf-8", dtype=str, on_bad_lines="skip")
-    print(f"Number of tasks: {len(df)}")
+def read_csv(file_path, args=None):
+    if not (args.baseline or args.gpt):
+        df = pd.read_csv(file_path, encoding="utf-8", dtype=str, on_bad_lines="skip")
 
-    questions = df["question"].tolist()
-    answers = df["answer"].tolist()
-    ids = df["id"].tolist()
+        questions = df["question"].tolist()
+        answers = df["answer"].tolist()
+        ids = df["id"].tolist()
 
-    assert (
-        len(questions) == len(answers) == len(ids)
-    ), f"Number of questions, answers and ids does not match in file {file_path}"
+        assert (
+            len(questions) == len(answers) == len(ids)
+        ), f"Number of questions, answers and ids does not match in file {file_path}, len(questions)={len(questions)}, len(answers)={len(answers)}, len(ids)={len(ids)}"
 
-    return questions, answers, ids, df
+        return questions, answers, df, ids
+
+    elif args.baseline:
+        try:
+            df = pd.read_csv(
+                file_path, encoding="utf-8", dtype=str, on_bad_lines="skip", sep="\t"
+            )
+            predictions = df["hyp"].tolist()
+            labels = df["pred"].tolist()
+        except KeyError:  # tsv was processed before and is now a csv actually
+            df = pd.read_csv(
+                file_path,
+                encoding="utf-8",
+                dtype=str,
+                on_bad_lines="skip",
+            )
+            predictions = df["hyp"].tolist()
+            labels = df["pred"].tolist()
+
+        assert len(predictions) == len(
+            labels
+        ), f"Number of questions, answers does not match in file {file_path}, len(predictions)={len(predictions)}, len(labels)={len(labels)})"
+
+        return predictions, labels, df
+
+    elif args.gpt:
+        df = pd.read_csv(
+            file_path,
+            encoding="utf-8",
+            dtype=str,
+            on_bad_lines="skip",
+        )
+
+        predictions = df["gpt-4"].tolist()
+        labels = df["answer"].tolist()
+
+        assert len(predictions) == len(
+            labels
+        ), f"Number of questions, answers does not match in file {file_path}, len(predictions)={len(predictions)}, len(labels)={len(labels)})"
+
+        return predictions, labels, df
 
 
 def calculate_chrf(predictions, labels):
@@ -88,11 +128,16 @@ def main(args):
     print(f"Results file: {results_file}")
 
     # file reading
-    _, predictions_a, predictions_ids, df_pred = read_csv(prediction_file)
-    _, labels_a, labels_ids, _ = read_csv(label_file)
+    if args.baseline or args.gpt:
+        predictions_a, labels_a, df_pred = read_csv(prediction_file, args)
+    else:
+        _, predictions_a, df_pred, predictions_ids = read_csv(prediction_file, args)
+        _, labels_a, _, labels_ids = read_csv(label_file, args)
 
-    for i in range(len(predictions_ids)):
-        assert predictions_ids[i] == labels_ids[i], f"IDs do not match at index {i}"
+        for i in range(len(predictions_ids)):
+            assert predictions_ids[i] == labels_ids[i], f"IDs do not match at index {i}"
+
+    print(f"Number of tasks: {len(df_pred)}")
 
     # calculate metrics
     chrf_results, chrf1_results, charf2_results = calculate_chrf(
@@ -164,6 +209,17 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="Path where the average results should be stored",
+    )
+
+    parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Whether the predictions are from the baseline system, changes the input file format",
+    )
+    parser.add_argument(
+        "--gpt",
+        action="store_true",
+        help="Whether the predictions are from the GPT baseline system, changes the input file format",
     )
 
     args = parser.parse_args()

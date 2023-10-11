@@ -34,7 +34,7 @@ All metrics are calculated using implementations from [Huggingface Evaluate Metr
 - ChrF ('char_order': 6, 'word_order': 0, 'beta': 2)
 - ChrF+ ('char_order': 6, 'word_order': 1, 'beta': 2)
 - ChrF++ ('char_order': 6, 'word_order': 2, 'beta': 2)
-- RougeL
+- RougeL (Longest common subsequence based scoring)
 - BERTScore F1 using embeddings from RobertaBase ('hashcode': 'roberta-base_L10_no-idf_version=0.3.12(hug_trans=4.34.0)
 
 ### Usage
@@ -50,3 +50,11 @@ python evaluate_QA.py --predictions PRED_FILE --labels GOLD_FILE --results RESUL
 - `OUTPUT_FILE` is the file to which the average scores per language will be written.
   
 Detailed scores (the scores for each paragraph) will be appended as columns to the `PRED_FILE`.
+
+### Sample Paragraphs
+
+Sample N paragraphs from the predictions file, and keep only the following columns:
+
+```bash
+...
+```
