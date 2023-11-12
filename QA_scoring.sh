@@ -1,14 +1,15 @@
 
-# PREDICTION_BASE=/Users/dug/Py/QA_NER_Eval/Outputs/Baselines/MT0/
-PREDICTION_BASE=/Users/dug/Py/QA_NER_Eval/Outputs/Baselines/gpt_4_results/
+PREDICTION_BASE=/Users/dug/Py/QA_NER_Eval/Outputs/Baselines/MT0/
+# PREDICTION_BASE=/Users/dug/Py/QA_NER_Eval/Outputs/Baselines/gpt_4_results/
 GOLD_BASE=/Users/dug/Py/wikiExtract2csv/Data/Test_labels/ #labels
 
-PREDICTION_PREFIX=""
+PREDICTION_PREFIX="zero_shot_"
+# PREDICTION_PREFIX=""
 
 FILE=QA_AZ_Test.csv
 PREDICTION=AZ.csv
-# # python evaluate_QA.py --predictions $PREDICTION_BASE$PREDICTION_PREFIX$PREDICTION --labels $GOLD_BASE$FILE --results $PREDICTION_BASE$PREDICTION_PREFIX"Evaluation.txt" --baseline
-python evaluate_QA.py --predictions $PREDICTION_BASE$PREDICTION_PREFIX$PREDICTION --labels $GOLD_BASE$FILE --results $PREDICTION_BASE$PREDICTION_PREFIX"Evaluation.txt" --gpt
+python evaluate_QA.py --predictions $PREDICTION_BASE$PREDICTION_PREFIX$PREDICTION --labels $GOLD_BASE$FILE --results $PREDICTION_BASE$PREDICTION_PREFIX"Evaluation.txt" --baseline
+# python evaluate_QA.py --predictions $PREDICTION_BASE$PREDICTION_PREFIX$PREDICTION --labels $GOLD_BASE$FILE --results $PREDICTION_BASE$PREDICTION_PREFIX"Evaluation.txt" --gpt
 
 # FILE=QA_ID_Test.csv
 # PREDICTION=ID.csv

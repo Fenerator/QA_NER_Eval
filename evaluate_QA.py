@@ -25,6 +25,7 @@ def read_csv(file_path, args=None):
             )
             predictions = df["hyp"].tolist()
             labels = df["pred"].tolist()
+            print(f"columns in df: {df.columns}")
         except KeyError:  # tsv was processed before and is now a csv actually
             df = pd.read_csv(
                 file_path,
