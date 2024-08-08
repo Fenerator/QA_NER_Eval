@@ -14,7 +14,7 @@ import sklearn.metrics as metrics
 from pathlib import Path
 
 # Local, Debugging mode
-debug = True
+debug = False
 
 
 # Path
@@ -78,6 +78,7 @@ def main():
         html_file, "<h1>Detailed Results</h1>"
     )  # Create the file to give real-time feedback
     detailed_scores = {} # [dataset][metric]
+    lens = []
     for dataset in get_dataset_names():  # Loop over datasets
         sub_scores = {}
         print_bar()
@@ -86,6 +87,7 @@ def main():
         
         # Read data
         y_test, y_pred = get_data(dataset)
+        lens.append(len(y_test))
         
         # Compute scores
         if len(y_pred) == 0:
@@ -100,9 +102,6 @@ def main():
         sub_scores["f1"] = f1 
         sub_scores["precision"] = precision
         sub_scores["recall"] = recall
-        
-        if debug:
-            print(sub_scores)
     
         write_file(html_file, f"<p>accuracy:  {accuracy:.3f}</p>")
         write_file(html_file, f"<p>f1: {f1:.3f}</p>")
@@ -120,26 +119,33 @@ def main():
         for metric in detailed_scores[dataset]:
             scores[metric].append(detailed_scores[dataset][metric])
     
+    weights = np.array(lens) / sum(lens)
+    assert sum(weights) == 1.0, f'Sum of weights is not 1.0: {sum(weights)}'
+        
     mean_scores = {}
     for metric in scores:
-        mean_scores[f'mean_{metric}'] = np.average(scores[metric], weights=[0.25, 0.25, 0.0, 0.25, 0.25])     
+        mean_scores[f'mean_{metric}'] = np.average(scores[metric], weights=weights)     
     
-    scores = {**scores, **mean_scores} # Merge dictionaries to one score dictionary
-    
-    write_file(html_file, f"<h1>Final Scores</h1>")
-    write_file(html_file, f"<p>accuracy:  {scores['mean_accuracy']:.3f}</p>")
-    write_file(html_file, f"<p>f1: {scores['mean_f1']:.3f}</p>")
-    write_file(html_file, f"<p>precision: {scores['mean_precision']:.3f}</p>")
-    write_file(html_file, f"<p>recall: {scores['mean_recall']:.3f}</p>")
+    write_file(html_file, f"<h1>Final Scores (averaged over languages)</h1>")
+    write_file(html_file, f"<p>accuracy:  {mean_scores['mean_accuracy']:.3f}</p>")
+    write_file(html_file, f"<p>f1: {mean_scores['mean_f1']:.3f}</p>")
+    write_file(html_file, f"<p>precision: {mean_scores['mean_precision']:.3f}</p>")
+    write_file(html_file, f"<p>recall: {mean_scores['mean_recall']:.3f}</p>")
     write_file(html_file, "<hr>")
-    # write_file(html_file, f"<p>Weighted Mean: {scores['weighted_mean']:.3f}</p>")
-    # write_file(html_file, "<hr>")
     
-    # Write scores
+    # Write scores for leaderboard (accuracy only)
+    leaderboard_scores = {}
+    leaderboard_scores["mean_accuracy"] = mean_scores['mean_accuracy']
+    
+    for dataset in get_dataset_names():
+        leaderboard_scores[dataset] = detailed_scores[dataset]["accuracy"]
     print_bar()
-    print("Scoring program finished. Writing scores.")
-    print(f'Detailed Scores:\n{detailed_scores}')
-    write_file(score_file, json.dumps(scores))
+    print("Scoring program finished. Writing scores...")
+    
+    if debug:
+        print(detailed_scores)
+        print(leaderboard_scores)
+    write_file(score_file, json.dumps(leaderboard_scores))
 
 
 
