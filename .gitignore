@@ -140,3 +140,5 @@ dmypy.json
 *.json
 
 *.tsv#
+
+detailed_results.html
