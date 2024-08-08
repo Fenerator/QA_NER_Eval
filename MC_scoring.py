@@ -11,23 +11,22 @@ import numpy as np
 import pandas as pd
 import random
 import sklearn.metrics as metrics
-
-# from sklearn.metrics import accuracy_score
-# import evaluate
+from pathlib import Path
 
 # Local, Debugging mode
 debug = True
 
-# from transformers import logging
-# logging.set_verbosity_error()
 
 # Path
 if debug:
-    input_dir = "/Users/dug/Documents/CodaBench/mini-automl_for_data_only/bundle_V4_one_phase_full/final_phase"  # Input from ingestion program
-    os.makedirs('/Users/dug/Documents/CodaBench/mini-automl_for_data_only/bundle_V4_one_phase_full/final_phase/output', exist_ok=True)
-    output_dir = "/Users/dug/Documents/CodaBench/mini-automl_for_data_only/bundle_V4_one_phase_full/final_phase/output/"  # To write the scores
-    reference_dir = os.path.join(input_dir, "reference_data")  # Ground truth data
-    prediction_dir = '/Users/dug/Documents/CodaBench/mini-automl_for_data_only/submission_V4_full'  # Prediction made by the model
+    BASE_Path = Path("~/Documents/MRL/MC_QA_competition/MC_competition")
+    
+    input_dir = BASE_Path / 'final_phase'  # Input from ingestion program
+    os.makedirs(input_dir / 'output', exist_ok=True)
+    output_dir = input_dir / "output"  # To write the scores
+    
+    reference_dir = input_dir / "reference_data"  # Ground truth data
+    prediction_dir = '~/Downloads/perfect_mc_submission'  # Prediction made by the model
 else:
     input_dir = "/app/input"  # Input from ingestion program
     output_dir = "/app/output/"  # To write the scores
@@ -70,68 +69,6 @@ def print_bar():
     print("-" * 10)
 
 
-def calculate_chrf(predictions, labels):
-    """calculate ChrF, and normalize, there should be one reference sub-list for each prediction sentence."""
-    print(f'Calculating ChrF ...')
-    chrf = evaluate.load("chrf")
-
-    charf = [
-        chrf.compute(predictions=[prediction], references=[[label]], word_order=0)[
-            "score"
-        ]
-        for prediction, label in zip(predictions, labels)
-    ]
-    
-    charf = sum(charf) / len(charf)
-    
-    
-
-    charf1 = [
-        chrf.compute(predictions=[prediction], references=[[label]], word_order=1)[
-            "score"
-        ]
-        for prediction, label in zip(predictions, labels)
-    ]
-    
-    charf1 = sum(charf1) / len(charf1)
-    
-    charf2 = [
-        chrf.compute(predictions=[prediction], references=[[label]], word_order=2)[
-            "score"
-        ]
-        for prediction, label in zip(predictions, labels)
-    ]
-    
-    charf2 = sum(charf2) / len(charf2) 
-    
-    # normalize
-    return charf / 100, charf1 / 100, charf2 / 100
-
-
-def calculate_rougeL(predictions, labels):
-    print(f'Calculating RougeL ...')
-    rouge = evaluate.load("rouge")
-
-    rougeL = [
-        rouge.compute(predictions=[prediction], references=[[label]])["rougeL"]
-        for prediction, label in zip(predictions, labels)
-    ]
-    
-    return sum(rougeL) / len(rougeL)
-
-
-def calculate_BERTScore(predictions, labels):
-    print(f'Calculating BERTScore ...')
-    bertscore = evaluate.load("bertscore")
-    results = [
-        bertscore.compute(
-            predictions=[prediction], references=[label], model_type="roberta-base"
-        )["f1"].pop()
-        for prediction, label in zip(predictions, labels)
-    ]
-
-    return sum(results) / len(results)
-
 def main():
     """The scoring program."""
     print_bar()
@@ -151,15 +88,21 @@ def main():
         y_test, y_pred = get_data(dataset)
         
         # Compute scores
-        accuracy = metrics.accuracy_score(y_test, y_pred, normalize=True)
-        f1 = metrics.f1_score(y_test, y_pred, average='micro')
-        precision = metrics.precision_score(y_test, y_pred, average='micro')
-        recall = metrics.recall_score(y_test, y_pred, average='micro')
+        if len(y_pred) == 0:
+            accuracy, f1, precision, recall = 0.0, 0.0, 0.0, 0.0
+        else:
+            accuracy = metrics.accuracy_score(y_test, y_pred, normalize=True)
+            f1 = metrics.f1_score(y_test, y_pred, average='micro')
+            precision = metrics.precision_score(y_test, y_pred, average='micro')
+            recall = metrics.recall_score(y_test, y_pred, average='micro')
 
         sub_scores["accuracy"] = accuracy
         sub_scores["f1"] = f1 
         sub_scores["precision"] = precision
         sub_scores["recall"] = recall
+        
+        if debug:
+            print(sub_scores)
     
         write_file(html_file, f"<p>accuracy:  {accuracy:.3f}</p>")
         write_file(html_file, f"<p>f1: {f1:.3f}</p>")
@@ -170,13 +113,18 @@ def main():
         detailed_scores[dataset] = sub_scores
     
     # calculate weighted mean over all datasets and metrics    
+    print_bar()
+    print(f'Calculating weighted mean over languages ...')
     scores = {'accuracy': [], 'f1': [], 'precision': [], 'recall': []}    
     for dataset in get_dataset_names():
         for metric in detailed_scores[dataset]:
             scores[metric].append(detailed_scores[dataset][metric])
     
+    mean_scores = {}
     for metric in scores:
-        scores[f'mean_{metric}'] = np.mean(scores[metric], weights=[0.25, 0.25, 0.0, 0.25, 0.25])     
+        mean_scores[f'mean_{metric}'] = np.average(scores[metric], weights=[0.25, 0.25, 0.0, 0.25, 0.25])     
+    
+    scores = {**scores, **mean_scores} # Merge dictionaries to one score dictionary
     
     write_file(html_file, f"<h1>Final Scores</h1>")
     write_file(html_file, f"<p>accuracy:  {scores['mean_accuracy']:.3f}</p>")
