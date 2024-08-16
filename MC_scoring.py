@@ -120,7 +120,7 @@ def main():
             scores[metric].append(detailed_scores[dataset][metric])
     
     weights = np.array(lens) / sum(lens)
-    assert sum(weights) == 1.0, f'Sum of weights is not 1.0: {sum(weights)}'
+    assert np.isclose(sum(weights), 1.0), f'Sum of weights is not 1.0: {sum(weights)}'
         
     mean_scores = {}
     for metric in scores:
