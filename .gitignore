@@ -140,5 +140,6 @@ dmypy.json
 *.json
 
 *.tsv#
+*.predict
 
 detailed_results.html
